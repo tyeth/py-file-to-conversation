@@ -24,6 +24,7 @@ parser.add_argument('--chunk_size', type=int, default=2048, help='The desired ch
 parser.add_argument('--username', type=str, help='The username for the input website (optional)')
 parser.add_argument('--password', type=str, help='The password for the input website (optional)')
 parser.add_argument('--wait', type=int,default=3, help='Time to wait for chatGPT to accept input')
+parser.add_argument('--resume', type=int,default=0, help='Resume from Part X -- 0 = instruction included first')
 
 args = parser.parse_args()
 
@@ -173,7 +174,7 @@ login_if_needed()
 
 # ...
 
-for i in range(total_buttons):
+for i in range(args.resume, total_buttons):
     # Switch to the button website tab
     driver.switch_to.window(driver.window_handles[0])
     if DEBUG: time.sleep(3)
