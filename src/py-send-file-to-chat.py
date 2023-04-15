@@ -14,7 +14,7 @@ from selenium.webdriver.common import by
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-DEBUG=1
+DEBUG=0
 if DEBUG: print("Starting!")
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Automate button clicking and pasting content.')
@@ -159,8 +159,16 @@ try:
         WebDriverWait(driver,20).until(EC.visibility_of(driver.find_element(by=by.By.XPATH, value=f"//button/div[contains(., 'Log in')]")))
         time.sleep(1)
     except:
-        print("Failed to find cloudflare login button. sleeping for 30")
-        time.sleep(30)
+        print("Failed to find cloudflare login button. sleeping for 1.5s")
+        time.sleep(1.5)
+    try:
+        print("Looking for Login button")
+        WebDriverWait(driver,20).until(EC.visibility_of(driver.find_element(by=by.By.XPATH, value=f"//button/div[contains(., 'Log in')]")))
+        time.sleep(1)
+    except:
+        print("Failed to find cloudflare login button. sleeping for 1.5s")
+        time.sleep(1.5)
+        
 except:
     print("No cloudflare")
 finally:
