@@ -1,3 +1,4 @@
+#Uses code/service from https://github.com/jupediaz/chatgpt-prompt-splitter/
 #pip install undetected-chromedriver
 # import undetected_chromedriver as uc
 # driver = uc.Chrome(use_subprocess=True)
@@ -21,10 +22,10 @@ parser = argparse.ArgumentParser(description='Automate button clicking and pasti
 parser.add_argument('input_website', type=str, help='The chatGPT conversation URL for file input')
 parser.add_argument('input_file', type=str, help='The path to the input text file')
 parser.add_argument('--chunk_size', type=int, default=2048, help='The desired chunk size (default: 2048)')
-parser.add_argument('--username', type=str, help='The username for the input website (optional)')
-parser.add_argument('--password', type=str, help='The password for the input website (optional)')
-parser.add_argument('--wait', type=int,default=3, help='Time to wait for chatGPT to accept input')
-parser.add_argument('--resume', type=int,default=0, help='Resume from Part X -- 0 = instruction included first')
+parser.add_argument('--username', type=str, help='The username for the input website (optional) Env Variable INPUT_WEBSITE_USERNAME')
+parser.add_argument('--password', type=str, help='The password for the input website (optional) Env Variable INPUT_WEBSITE_PASSWORD')
+parser.add_argument('--wait', type=int,default=3, help='Time to wait for chatGPT to accept input (optional:3s)')
+parser.add_argument('--resume', type=int,default=0, help='Resume from Part X, default 0 = instruction included first')
 
 args = parser.parse_args()
 
@@ -40,6 +41,35 @@ button_website = "https://chatgpt-prompt-splitter.jjdiaz.dev/"
 with open(args.input_file, 'r') as file:
     input_text = file.read()
 
+# Now POC works, change to chunk self, like https://github.com/jupediaz/chatgpt-prompt-splitter/blob/main/api/index.py#L36-L59
+def beep():
+    print('\a')
+    # testimport os
+    #
+    ## Windows
+    #if os.name == 'nt':
+    #    os.system('echo \a')
+    #
+    ## macOS
+    #elif os.name == 'darwin':
+    #    os.system('say "beep"')
+    #
+    ## Linux
+    #else:
+    #    os.system('echo -e "\a"')
+
+    #OR----
+    # import simpleaudio as sa
+    # 
+    # # Define the audio data as a byte string
+    # audio_data = bytes.fromhex('FF 00 FF 00') * 440
+    # 
+    # # Create a SimpleAudio playback object and play the audio data
+    # playback = sa.play_buffer(audio_data, 1, 2, 44100)
+    # playback.wait_done()
+
+
+
 
 # Copy the content to the clipboard
 pyperclip.copy(input_text)
@@ -48,6 +78,29 @@ pyperclip.copy(input_text)
 # Initialize the web driver
 driver = uc.Chrome(use_subprocess=True)
 # driver = webdriver.Chrome()
+
+
+def find_first_element_by_selector(selector, wait_time=10, ec=EC.presence_of_element_located):
+    element = WebDriverWait(driver, wait_time).until(ec((by.By.CSS_SELECTOR, selector)))
+    return element
+
+# click_me_button = find_first_element_by_selector("button div:contains('Click me')", ec=EC.element_to_be_clickable)
+# message_box = find_first_element_by_selector("textarea[placeholder='Enter your message']")
+# user_input = find_first_element_by_selector("[id^='user_']")
+
+# find_button_by_text = lambda text: driver.find_element(by=by.By.CSS_SELECTOR, value=f"button div[contains(text(),'{text}')]/..")
+# find_textarea_by_placeholder = lambda placeholder: driver.find_element(by=by.By.CSS_SELECTOR, value=f"textarea[placeholder='{placeholder}']")
+# find_element_by_id_starts_with = lambda id_prefix: driver.find_element(by=by.By.XPATH, value=f"//*[starts-with(@id,'{id_prefix}')]")
+
+def find_button_by_div_text(text):
+    return find_first_element_by_selector(f"button div:contains('{text}')")#.find_element(by=by.By.XPATH, value="..")
+
+def find_textarea_by_placeholder(placeholder):
+    return find_first_element_by_selector(f"textarea[placeholder='{placeholder}']")
+
+def find_element_by_id_starts_with(id_prefix):
+    return find_first_element_by_selector(f"*[id^='{id_prefix}']")
+
 
 # Open the button website
 driver.get(button_website)
@@ -159,14 +212,15 @@ try:
         WebDriverWait(driver,20).until(EC.visibility_of(driver.find_element(by=by.By.XPATH, value=f"//button/div[contains(., 'Log in')]")))
         time.sleep(1)
     except:
-        print("Failed to find cloudflare login button. sleeping for 1.5s")
+        print("Failed to find openAI login button. sleeping for 1.5s")
         time.sleep(1.5)
     try:
         print("Looking for Login button")
         WebDriverWait(driver,20).until(EC.visibility_of(driver.find_element(by=by.By.XPATH, value=f"//button/div[contains(., 'Log in')]")))
         time.sleep(1)
     except:
-        print("Failed to find cloudflare login button. sleeping for 1.5s")
+        beep()
+        print("Failed to find openAI login button. sleeping for 60s - get to conversation page manually")
         time.sleep(1.5)
         
 except:
@@ -180,7 +234,7 @@ finally:
 login_if_needed()
 
 
-# ...
+# paste in each chunk
 
 for i in range(args.resume, total_buttons):
     # Switch to the button website tab
@@ -196,6 +250,7 @@ for i in range(args.resume, total_buttons):
     # Switch to the input website tab
     driver.switch_to.window(driver.window_handles[1])
     time.sleep(1)
+    
     # Find the input box by unique CSS selector
     input_box = driver.find_elements(by=by.By.CSS_SELECTOR, value="form textarea[placeholder=\"Send a message...\"]")[0]
 
@@ -205,7 +260,9 @@ for i in range(args.resume, total_buttons):
     input_box.send_keys(Keys.ENTER)
 
     # Wait for the action to complete
-    time.sleep(SLEEP_TIME)
+    find_button_by_div_text('Stop generating')
+    find_button_by_div_text('Regenerate response')
+    #time.sleep(SLEEP_TIME)
 
 # Close the browser
 time.sleep(SLEEP_TIME)
