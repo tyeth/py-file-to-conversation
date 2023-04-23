@@ -80,8 +80,8 @@ driver = uc.Chrome(use_subprocess=True)
 # driver = webdriver.Chrome()
 
 
-def find_first_element_by_selector(selector, wait_time=10, ec=EC.presence_of_element_located):
-    element = WebDriverWait(driver, wait_time).until(ec((by.By.CSS_SELECTOR, selector)))
+def find_first_element_by_selector(selector, selector_type=by.By.CSS_SELECTOR, wait_time=20, ec=EC.presence_of_element_located):
+    element = WebDriverWait(driver, wait_time).until(ec((selector_type, selector)))
     return element
 
 # click_me_button = find_first_element_by_selector("button div:contains('Click me')", ec=EC.element_to_be_clickable)
@@ -92,8 +92,12 @@ def find_first_element_by_selector(selector, wait_time=10, ec=EC.presence_of_ele
 # find_textarea_by_placeholder = lambda placeholder: driver.find_element(by=by.By.CSS_SELECTOR, value=f"textarea[placeholder='{placeholder}']")
 # find_element_by_id_starts_with = lambda id_prefix: driver.find_element(by=by.By.XPATH, value=f"//*[starts-with(@id,'{id_prefix}')]")
 
-def find_button_by_div_text(text):
-    return find_first_element_by_selector(f"button div:contains('{text}')")#.find_element(by=by.By.XPATH, value="..")
+def find_button_by_div_text(text , timeout=20):
+    return find_first_element_by_selector(
+        selector=f"//button/div[contains(text(),'{text}')]",
+        selector_type= by.By.XPATH,
+        wait_time=timeout
+        )#.find_element(by=by.By.XPATH, value="..")
 
 def find_textarea_by_placeholder(placeholder):
     return find_first_element_by_selector(f"textarea[placeholder='{placeholder}']")
@@ -260,7 +264,13 @@ for i in range(args.resume, total_buttons):
     input_box.send_keys(Keys.ENTER)
 
     # Wait for the action to complete
-    find_button_by_div_text('Stop generating')
+    try:
+        find_button_by_div_text('Stop generating', 5)
+    except:
+        print("Failed to find Stop generating button. sleeping for 0.5s")
+        time.sleep(0.5)
+    finally:
+        pass
     find_button_by_div_text('Regenerate response')
     #time.sleep(SLEEP_TIME)
 
